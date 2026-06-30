@@ -90,7 +90,4 @@ The backend strictly adheres to **Clean Architecture** principles, separating co
 3. **Infrastructure:** External concerns like Database access (`ApplicationDbContext`), file storage, and email services.
 4. **API (Presentation):** ASP.NET Core Controllers routing HTTP requests to the Application layer.
 
----
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/Vishagan-CST/MovieBookingManagementSystem/issues).
