@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MovieBookingManagement.API/MovieBookingManagement.API.csproj" />
+    <Project Path="src/MovieBookingManagement.Application/MovieBookingManagement.Application.csproj" />
+    <Project Path="src/MovieBookingManagement.Domain/MovieBookingManagement.Domain.csproj" />
+    <Project Path="src/MovieBookingManagement.Infrastructure/MovieBookingManagement.Infrastructure.csproj" />
+  </Folder>
+</Solution>
