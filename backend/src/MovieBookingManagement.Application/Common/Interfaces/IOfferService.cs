@@ -13,4 +13,5 @@ public interface IOfferService
     Task<Offer> CreateOfferAsync(Offer offer, CancellationToken cancellationToken = default);
     Task<bool> UpdateOfferAsync(Offer offer, CancellationToken cancellationToken = default);
     Task<bool> DeleteOfferAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<(bool IsValid, string Message, decimal DiscountPercentage)> ValidateOfferAsync(string code, Guid userId, DateTime showDate, CancellationToken cancellationToken = default);
 }

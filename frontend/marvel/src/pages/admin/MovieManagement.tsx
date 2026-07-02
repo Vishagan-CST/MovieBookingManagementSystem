@@ -152,8 +152,8 @@ export const MovieManagement: React.FC = () => {
       genre: genreArray,
       language: data.language,
       duration: Number(data.duration),
-      releaseDate: data.releaseDate,
-      endDate: data.endDate,
+      releaseDate: data.releaseDate || new Date().toISOString(),
+      endDate: data.endDate || new Date().toISOString(),
       rating: Number(data.rating),
       status: data.status,
       posterUrl: data.posterUrl || 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&w=300&q=80',
@@ -402,32 +402,6 @@ export const MovieManagement: React.FC = () => {
                 <option value="Popular">Popular</option>
                 <option value="Ended">Ended</option>
               </select>
-            </div>
-
-            {/* Release Date */}
-            <div className="md:col-span-6 space-y-1">
-              <label className="text-xs text-gray-400 font-semibold uppercase">Release Date</label>
-              <TextField
-                fullWidth
-                type="date"
-                size="small"
-                {...register('releaseDate', { required: 'Release date is required' })}
-                error={!!errors.releaseDate}
-                helperText={errors.releaseDate?.message}
-              />
-            </div>
-
-            {/* End Date */}
-            <div className="md:col-span-6 space-y-1">
-              <label className="text-xs text-gray-400 font-semibold uppercase">End Date</label>
-              <TextField
-                fullWidth
-                type="date"
-                size="small"
-                {...register('endDate', { required: 'End date is required' })}
-                error={!!errors.endDate}
-                helperText={errors.endDate?.message}
-              />
             </div>
 
             {/* Poster Upload */}

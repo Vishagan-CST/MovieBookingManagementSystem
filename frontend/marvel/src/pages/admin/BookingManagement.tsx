@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Header from '../../components/Header';
+import { ConfirmationDialog } from '../../components/Modal';
 import { Button, TextField } from '@mui/material';
 import { Cancel, CheckCircleOutlined } from '@mui/icons-material';
 
@@ -8,6 +9,12 @@ export const BookingManagement: React.FC = () => {
   const { bookings, cancelBooking, approveRefund } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  
+  const [confirmRefundOpen, setConfirmRefundOpen] = useState(false);
+  const [bookingToRefund, setBookingToRefund] = useState<string | null>(null);
 
   const processedBookings = useMemo(() => {
     return bookings.filter(b => {
@@ -21,6 +28,32 @@ export const BookingManagement: React.FC = () => {
       return matchSearch && matchStatus;
     });
   }, [bookings, search, statusFilter]);
+
+  const handleTriggerCancel = (id: string) => {
+    setBookingToCancel(id);
+    setConfirmCancelOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (bookingToCancel) {
+      cancelBooking(bookingToCancel);
+      setBookingToCancel(null);
+    }
+    setConfirmCancelOpen(false);
+  };
+
+  const handleTriggerRefund = (id: string) => {
+    setBookingToRefund(id);
+    setConfirmRefundOpen(true);
+  };
+
+  const handleConfirmRefund = () => {
+    if (bookingToRefund) {
+      approveRefund(bookingToRefund);
+      setBookingToRefund(null);
+    }
+    setConfirmRefundOpen(false);
+  };
 
   const breadcrumbs = [
     { label: 'Admin Dashboard', path: '/admin' },
@@ -106,7 +139,7 @@ export const BookingManagement: React.FC = () => {
                           <Button
                             variant="outlined"
                             size="small"
-                            onClick={() => cancelBooking(b.id)}
+                            onClick={() => handleTriggerCancel(b.id)}
                             startIcon={<Cancel />}
                             sx={{
                               py: 0.5,
@@ -123,7 +156,7 @@ export const BookingManagement: React.FC = () => {
                           <Button
                             variant="outlined"
                             size="small"
-                            onClick={() => approveRefund(b.id)}
+                            onClick={() => handleTriggerRefund(b.id)}
                             startIcon={<CheckCircleOutlined />}
                             sx={{
                               py: 0.5,
@@ -146,6 +179,26 @@ export const BookingManagement: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={confirmCancelOpen}
+        onClose={() => setConfirmCancelOpen(false)}
+        onConfirm={handleConfirmCancel}
+        title="Confirm Ticket Cancellation"
+        message="Are you sure you want to cancel this booking? This action will invalidate the customer's tickets."
+        confirmText="Cancel Ticket"
+        severity="error"
+      />
+
+      <ConfirmationDialog
+        open={confirmRefundOpen}
+        onClose={() => setConfirmRefundOpen(false)}
+        onConfirm={handleConfirmRefund}
+        title="Confirm Refund Approval"
+        message="Are you sure you want to approve the refund for this cancelled booking?"
+        confirmText="Approve Refund"
+        severity="info"
+      />
 
     </div>
   );

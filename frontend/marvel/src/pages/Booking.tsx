@@ -32,7 +32,7 @@ import toast from 'react-hot-toast';
 export const Booking: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { movies, shows, currentUser, bookingFlow, setBookingFlow, createBooking, settings } = useApp();
+  const { movies, shows, currentUser, bookingFlow, setBookingFlow, createBooking, settings, bookings } = useApp();
 
   const bookingTimeoutSeconds = useMemo(() => {
     return (settings?.bookingTimeout ?? 10) * 60;
@@ -56,6 +56,11 @@ export const Booking: React.FC = () => {
   const [selectedMovieId, setSelectedMovieId] = useState(urlMovieId || '');
   const [selectedShowId, setSelectedShowId] = useState(urlShowId || '');
 
+  // Check if current user has past bookings
+  const hasPastBookings = currentUser 
+    ? bookings.some(b => b.userId === currentUser.id && b.status === 'Confirmed') 
+    : false;
+
   // Payment State
   const [paymentTab, setPaymentTab] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState({
@@ -65,6 +70,11 @@ export const Booking: React.FC = () => {
     cardName: '',
     upiId: '',
   });
+
+  // Promo Code State
+  const [promoCode, setPromoCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
   // Load show details if showId is present in URL
   useEffect(() => {
@@ -202,12 +212,49 @@ export const Booking: React.FC = () => {
     const method = paymentTab === 0 ? 'card' : paymentTab === 1 ? 'upi' : paymentTab === 2 ? 'wallet' : 'cash';
     
     try {
-      const result = await createBooking(method);
+      const finalPriceToPay = (bookingFlow.totalPrice || 0) - discountAmount;
+      const result = await createBooking(method as 'card' | 'upi' | 'cash' | 'wallet', finalPriceToPay);
+      
       setFinalBooking(result);
       setIsTimerRunning(false);
       setActiveStep(3);
     } catch (err: any) {
       toast.error(err.message || 'Payment processing failed.');
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode) return;
+    setIsApplyingPromo(true);
+    try {
+      const response = await fetch('http://localhost:5068/api/offers/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.token}`
+        },
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          userId: currentUser?.id,
+          showDate: activeShow?.date
+        })
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.Message || responseData.message || responseData.title || 'Invalid promo code');
+      }
+
+      const discountPercentage = responseData.discountPercentage || 0;
+      const discountValue = (bookingFlow.totalPrice || 0) * (discountPercentage / 100);
+      setDiscountAmount(discountValue);
+      toast.success(responseData.message || 'Offer applied successfully!');
+    } catch (err: any) {
+      setDiscountAmount(0);
+      toast.error(err.message || 'Invalid promo code');
+    } finally {
+      setIsApplyingPromo(false);
     }
   };
 
@@ -414,9 +461,9 @@ export const Booking: React.FC = () => {
                       '& .MuiTab-root.Mui-selected': { color: '#FFD700', fontWeight: 'bold' }
                     }}
                   >
-                    <Tab icon={<CreditCard sx={{ mr: 1 }} />} label="Credit Card" />
-                    <Tab icon={<QrCode sx={{ mr: 1 }} />} label="UPI (Paytm / GPay)" />
-                    <Tab icon={<AccountBalanceWallet sx={{ mr: 1 }} />} label="Wallet" />
+                    <Tab icon={<CreditCard sx={{ mr: 1 }} />} label="Credit/Debit Card" />
+                    <Tab icon={<QrCode sx={{ mr: 1 }} />} label="FriMi / eZ Cash" />
+                    <Tab icon={<AccountBalanceWallet sx={{ mr: 1 }} />} label="Bank Transfer" />
                     <Tab icon={<Paid sx={{ mr: 1 }} />} label="Cash at Cinema" />
                   </Tabs>
 
@@ -474,27 +521,27 @@ export const Booking: React.FC = () => {
                     {paymentTab === 1 && (
                       <div className="space-y-4">
                         <div className="space-y-1">
-                          <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">UPI ID / VPA</label>
+                          <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Mobile Number / FriMi ID</label>
                           <TextField
                             fullWidth
-                            placeholder="tonystark@okicici"
+                            placeholder="077XXXXXXX"
                             value={paymentDetails.upiId}
                             onChange={(e) => setPaymentDetails({ ...paymentDetails, upiId: e.target.value })}
                           />
                         </div>
                         <p className="text-xs text-gray-500 leading-relaxed">
-                          Enter your UPI ID. We will send a payment notification request to your selected mobile app.
+                          Enter your mobile number registered with FriMi, eZ Cash, or mCash. We will send a payment request to your app.
                         </p>
                       </div>
                     )}
 
                     {paymentTab === 2 && (
                       <div className="p-4 bg-black/30 rounded-xl border border-white/5">
-                        <p className="text-sm font-semibold text-white">Select Wallet Brand</p>
-                        <RadioGroup defaultValue="applepay" className="grid grid-cols-2 gap-2 mt-3">
-                          <FormControlLabel value="applepay" control={<Radio color="error" />} label="Apple Pay" />
-                          <FormControlLabel value="googlepay" control={<Radio color="error" />} label="Google Wallet" />
-                          <FormControlLabel value="paypal" control={<Radio color="error" />} label="PayPal Link" />
+                        <p className="text-sm font-semibold text-white">Select Bank</p>
+                        <RadioGroup defaultValue="boc" className="grid grid-cols-2 gap-2 mt-3">
+                          <FormControlLabel value="boc" control={<Radio color="error" />} label="BOC" />
+                          <FormControlLabel value="combank" control={<Radio color="error" />} label="Commercial Bank" />
+                          <FormControlLabel value="hnb" control={<Radio color="error" />} label="HNB" />
                         </RadioGroup>
                       </div>
                     )}
@@ -521,7 +568,7 @@ export const Booking: React.FC = () => {
                         variant="contained"
                         sx={{ bgcolor: '#C1121F', '&:hover': { bgcolor: '#A00F19' } }}
                       >
-                        Complete Payment (${bookingFlow.totalPrice})
+                        Complete Payment (${((bookingFlow.totalPrice || 0) - discountAmount).toFixed(2)})
                       </Button>
                     </div>
                   </form>
@@ -537,7 +584,35 @@ export const Booking: React.FC = () => {
                   <div className="flex justify-between"><span className="text-gray-500">Seats:</span> <span className="text-amber-400 font-bold">{bookingFlow.selectedSeats?.join(', ')}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Ticket Price:</span> <span className="text-white font-bold">${activeShow.ticketPrice}</span></div>
                   <Divider sx={{ bgcolor: 'rgba(255,255,255,0.06)' }} />
-                  <div className="flex justify-between text-sm"><span className="text-gray-300 font-semibold">Total Price:</span> <span className="text-[#FFD700] font-black">${bookingFlow.totalPrice}</span></div>
+                  
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between"><span className="text-emerald-500">Discount Applied:</span> <span className="text-emerald-500 font-bold">-${discountAmount.toFixed(2)}</span></div>
+                  )}
+                  
+                  {!hasPastBookings && (
+                    <div className="flex gap-2 mt-2">
+                       <TextField 
+                         size="small" 
+                         placeholder="Promo Code" 
+                         value={promoCode} 
+                         onChange={(e) => setPromoCode(e.target.value)} 
+                         sx={{ '& .MuiOutlinedInput-root': { color: 'white', borderColor: 'rgba(255,255,255,0.2)' } }}
+                       />
+                       <Button 
+                         variant="outlined" 
+                         onClick={handleApplyPromo}
+                         disabled={isApplyingPromo || !promoCode}
+                         sx={{ color: '#FFD700', borderColor: '#FFD700' }}
+                       >
+                         Apply
+                       </Button>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-sm mt-3 pt-2 border-t border-white/10">
+                     <span className="text-gray-300 font-semibold">Total Price:</span> 
+                     <span className="text-[#FFD700] font-black">${((bookingFlow.totalPrice || 0) - discountAmount).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -27,26 +27,18 @@ export const TESTIMONIALS: Testimonial[] = [
 export const OFFERS: Offer[] = [
   {
     id: 'o_1',
-    code: 'MARVEL20',
-    title: 'Avengers Welcome Offer',
-    description: 'Get 20% flat discount on booking your first ticket in the Platinum Cinema Hall.',
+    code: 'WELCOME20',
+    title: 'First Booking Offer',
+    description: 'Get 20% discount on your first movie ticket booking.',
     discountPercentage: 20,
-    expiryDate: '2026-07-31',
+    expiryDate: '2026-12-31',
   },
   {
     id: 'o_2',
-    code: 'MIDWEEK15',
-    title: 'Midweek Movie Mania',
-    description: 'Get 15% discount on bookings done for Monday to Thursday showtimes.',
-    discountPercentage: 15,
-    expiryDate: '2026-08-30',
-  },
-  {
-    id: 'o_3',
-    code: 'GOLDEN30',
-    title: 'Golden Weekend Deal',
-    description: 'Save 30% on food and beverage combos by using this code during weekend ticket bookings.',
-    discountPercentage: 30,
-    expiryDate: '2026-06-30',
+    code: 'WEEKEND10',
+    title: 'Weekend Movie Deal',
+    description: 'Get 10% discount on Saturday and Sunday showtimes.',
+    discountPercentage: 10,
+    expiryDate: '2026-12-31',
   }
 ];

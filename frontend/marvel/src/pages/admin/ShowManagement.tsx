@@ -5,9 +5,10 @@ import Header from '../../components/Header';
 import Modal, { ConfirmationDialog } from '../../components/Modal';
 import { Button, TextField } from '@mui/material';
 import { Add, Delete } from '@mui/icons-material';
+import toast from 'react-hot-toast';
 
 export const ShowManagement: React.FC = () => {
-  const { shows, movies, halls, addShow, deleteShow } = useApp();
+  const { shows, movies, halls, addShow, deleteShow, editMovie } = useApp();
   const [openModal, setOpenModal] = useState(false);
 
   // Delete confirmation
@@ -18,17 +19,20 @@ export const ShowManagement: React.FC = () => {
     defaultValues: {
       movieId: '',
       hallName: 'Silver' as any,
-      date: '',
+      startDate: '',
+      endDate: '',
       startTime: '',
       endTime: ''
     }
   });
 
   const handleOpenAdd = () => {
+    const today = new Date().toISOString().split('T')[0];
     reset({
       movieId: movies[0]?.id || '',
       hallName: 'Silver',
-      date: new Date().toISOString().split('T')[0],
+      startDate: today,
+      endDate: today,
       startTime: '12:00 PM',
       endTime: '02:30 PM'
     });
@@ -36,14 +40,40 @@ export const ShowManagement: React.FC = () => {
   };
 
   const onSubmit = (data: any) => {
-    addShow({
-      movieId: data.movieId,
-      hallName: data.hallName,
-      date: data.date,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      status: 'active'
-    });
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    
+    if (end < start) {
+      toast.error('End date must be after or equal to start date');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isFuture = start > today;
+
+    const movie = movies.find(m => m.id === data.movieId);
+    if (movie) {
+      const newStatus = isFuture ? 'Upcoming' : 'Now Showing';
+      if (movie.status !== newStatus) {
+        editMovie({ ...movie, status: newStatus });
+      }
+    }
+
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      addShow({
+        movieId: data.movieId,
+        hallName: data.hallName,
+        date: dateString,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        status: 'active'
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
     setOpenModal(false);
   };
 
@@ -175,17 +205,30 @@ export const ShowManagement: React.FC = () => {
             </select>
           </div>
 
-          {/* Date Picker */}
-          <div className="space-y-1">
-            <label className="text-xs text-gray-400 font-semibold uppercase">Date</label>
-            <TextField
-              fullWidth
-              type="date"
-              size="small"
-              {...register('date', { required: 'Date is required' })}
-              error={!!errors.date}
-              helperText={errors.date?.message}
-            />
+          {/* Date Range Picker */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400 font-semibold uppercase">Start Date</label>
+              <TextField
+                fullWidth
+                type="date"
+                size="small"
+                {...register('startDate', { required: 'Start date is required' })}
+                error={!!errors.startDate}
+                helperText={errors.startDate?.message as string}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400 font-semibold uppercase">End Date</label>
+              <TextField
+                fullWidth
+                type="date"
+                size="small"
+                {...register('endDate', { required: 'End date is required' })}
+                error={!!errors.endDate}
+                helperText={errors.endDate?.message as string}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

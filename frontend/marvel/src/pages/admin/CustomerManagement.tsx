@@ -1,12 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Header from '../../components/Header';
+import { ConfirmationDialog } from '../../components/Modal';
 import { Button, TextField } from '@mui/material';
 import { Block, CheckCircle } from '@mui/icons-material';
 
 export const CustomerManagement: React.FC = () => {
   const { users, bookings, disableUser } = useApp();
   const [search, setSearch] = useState('');
+  
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string, isBlocked: boolean } | null>(null);
 
   // Filter customers only
   const customers = useMemo(() => {
@@ -22,7 +26,16 @@ export const CustomerManagement: React.FC = () => {
   }, [customers, search]);
 
   const handleToggleBlock = (userId: string, currentBlockedStatus: boolean) => {
-    disableUser(userId, !currentBlockedStatus);
+    setSelectedUser({ id: userId, isBlocked: currentBlockedStatus });
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    if (selectedUser) {
+      disableUser(selectedUser.id, !selectedUser.isBlocked);
+      setSelectedUser(null);
+    }
+    setConfirmOpen(false);
   };
 
   const breadcrumbs = [
@@ -112,6 +125,15 @@ export const CustomerManagement: React.FC = () => {
         </div>
       </div>
 
+      <ConfirmationDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirm}
+        title={selectedUser?.isBlocked ? "Confirm Restore Profile" : "Confirm Block Profile"}
+        message={`Are you sure you want to ${selectedUser?.isBlocked ? 'restore' : 'block'} this customer profile?`}
+        confirmText={selectedUser?.isBlocked ? 'Restore' : 'Block'}
+        severity={selectedUser?.isBlocked ? 'info' : 'error'}
+      />
     </div>
   );
 };

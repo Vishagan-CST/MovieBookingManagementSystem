@@ -66,4 +66,30 @@ public class OffersController : ApiControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("validate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ValidateOffer(ValidateOfferRequest request, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(request.UserId, out var userIdGuid))
+        {
+            userIdGuid = Guid.Empty;
+        }
+
+        var result = await _offerService.ValidateOfferAsync(request.Code, userIdGuid, request.ShowDate, cancellationToken);
+        if (!result.IsValid)
+        {
+            return BadRequest(new { Message = result.Message });
+        }
+
+        return Ok(new { Message = result.Message, DiscountPercentage = result.DiscountPercentage });
+    }
+}
+
+public class ValidateOfferRequest
+{
+    public string Code { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public DateTime ShowDate { get; set; }
 }

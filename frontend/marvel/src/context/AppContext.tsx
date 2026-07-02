@@ -54,7 +54,7 @@ interface AppContextType {
   deleteShow: (id: string) => void;
 
   // Booking Operations
-  createBooking: (paymentMethod: 'card' | 'upi' | 'cash' | 'wallet') => Promise<Booking>;
+  createBooking: (paymentMethod: 'card' | 'upi' | 'cash' | 'wallet', finalPrice?: number) => Promise<Booking>;
   cancelBooking: (id: string) => void;
   approveRefund: (id: string) => void;
   clearBookingFlow: () => void;
@@ -621,7 +621,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Booking Operations
-  const createBooking = async (paymentMethod: 'card' | 'upi' | 'cash' | 'wallet'): Promise<Booking> => {
+  const createBooking = async (paymentMethod: 'card' | 'upi' | 'cash' | 'wallet', finalPrice?: number): Promise<Booking> => {
     if (!currentUser) {
       throw new Error('User authentication required to book tickets');
     }
@@ -659,7 +659,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showTime: show.startTime,
       hallName: show.hallName,
       seats: selectedSeats,
-      totalPrice,
+      totalPrice: finalPrice !== undefined ? finalPrice : totalPrice,
       paymentMethod,
       status: 'Confirmed',
       bookingDate: new Date().toISOString()

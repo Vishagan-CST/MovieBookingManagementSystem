@@ -48,4 +48,28 @@ public class OfferService : IOfferService
         _context.Offers.Remove(offer);
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
+
+    public async Task<(bool IsValid, string Message, decimal DiscountPercentage)> ValidateOfferAsync(string code, Guid userId, DateTime showDate, CancellationToken cancellationToken = default)
+    {
+        var offer = await _context.Offers.FirstOrDefaultAsync(o => o.Code == code, cancellationToken);
+        if (offer == null) return (false, "Invalid offer code.", 0);
+        
+        if (offer.ExpiryDate < DateTime.UtcNow) return (false, "Offer has expired.", 0);
+
+        if (offer.IsFirstTicketOnly)
+        {
+            var hasPreviousBookings = await _context.Bookings.AnyAsync(b => b.UserId == userId, cancellationToken);
+            if (hasPreviousBookings) return (false, "This offer is only valid for your first ticket.", 0);
+        }
+
+        if (offer.IsWeekendOnly)
+        {
+            if (showDate.DayOfWeek != DayOfWeek.Saturday && showDate.DayOfWeek != DayOfWeek.Sunday)
+            {
+                return (false, "This offer is only valid for weekend showtimes.", 0);
+            }
+        }
+
+        return (true, "Offer applied successfully.", offer.DiscountPercentage);
+    }
 }

@@ -7,8 +7,19 @@ import { LocalActivity, Loyalty, Star, InfoOutlined } from '@mui/icons-material'
 import { Button, Card } from '@mui/material';
 
 export const Home: React.FC = () => {
-  const { movies, offers, testimonials } = useApp();
+  const { movies, offers, testimonials, currentUser, bookings } = useApp();
   const navigate = useNavigate();
+
+  const hasPastBookings = currentUser 
+    ? bookings.some(b => b.userId === currentUser.id && b.status === 'Confirmed') 
+    : false;
+
+  const visibleOffers = offers.filter(offer => {
+    if (offer.code === 'WELCOME20' && hasPastBookings) {
+      return false;
+    }
+    return true;
+  });
 
   // Find a popular movie to display as featured hero
   const heroMovie = movies.find(m => m.id === 'mov_1') || movies[0];
@@ -213,7 +224,7 @@ export const Home: React.FC = () => {
             <p className="text-gray-400 text-sm mt-1">Save big on booking tickets and meals combo</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {offers.map((offer) => (
+            {visibleOffers.map((offer) => (
               <motion.div
                 key={offer.id}
                 whileHover={{ y: -5 }}

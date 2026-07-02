@@ -10,4 +10,6 @@ public class Offer : AuditableEntity
     public string Description { get; set; } = string.Empty;
     public decimal DiscountPercentage { get; set; }
     public DateTime ExpiryDate { get; set; }
+    public bool IsFirstTicketOnly { get; set; }
+    public bool IsWeekendOnly { get; set; }
 }
